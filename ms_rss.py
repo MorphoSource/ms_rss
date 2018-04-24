@@ -19,11 +19,11 @@ def create_new_datasets(recordset, d_dir):
 	create_dl_report.gen_csv(recordset, join(d_dir, 'dl.csv'))
 	create_dl_request_report.gen_csv(recordset, join(d_dir, 'dl_request.csv'))
 
-rss_dir = '/home/rapiduser/rss/'
-tmp_dir = '/home/rapiduser/tmp/'
+rss_dir = '/opt/rh/httpd24/root/var/www/html/rss/'
+tmp_dir = 'tmp/'
 
 # Get recordsets
-conn = db.db_conn_socket()
+conn = db.db_conn()
 c = conn.cursor()
 sql = """
 	SELECT DISTINCT `recordset` FROM `ms_specimens`

@@ -11,7 +11,7 @@ def approval_text(approval_code):
         return 'denied'
 
 def gen_csv(recordset, csv_path):
-	conn = db.db_conn_socket()
+	conn = db.db_conn()
 	c = conn.cursor()
 	sql = """ 
 			SELECT * FROM `ms_media_download_requests` AS r

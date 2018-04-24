@@ -3,7 +3,7 @@ import media_download_stats as stats
 import pandas
 
 def get_num_mf_derived_from(mf_id):
-    conn = db.db_conn_socket()
+    conn = db.db_conn()
     c = conn.cursor()
     sql = """ 
         SELECT * FROM `ms_media_files`
@@ -13,7 +13,7 @@ def get_num_mf_derived_from(mf_id):
     return len(db_result)
 
 def get_num_m_derived_from(m_id):
-    conn = db.db_conn_socket()
+    conn = db.db_conn()
     c = conn.cursor()
     sql = """ 
         SELECT * FROM `ms_media`

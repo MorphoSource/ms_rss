@@ -3,7 +3,7 @@ import ms_media_file
 import pandas
 
 def gen_csv(recordset, csv_path):
-	conn = db.db_conn_socket()
+	conn = db.db_conn()
 	c = conn.cursor()
 
 	sql = """ SELECT * FROM `ms_specimens` AS s 
