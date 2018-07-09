@@ -1,6 +1,17 @@
+from os import makedirs
+from os.path import join, split, isdir
+
+import create_eml
 import datetime
 import db
 import pandas
+
+def mkdir_if_not_exists(directory):
+	if not isdir(directory):
+		makedirs(directory)
+
+def convert_filepath_to_urlpath(filepath):
+	return 'https://www.morphosource.org/rss' + filepath.split('tmp')[1]
 
 def approval_text(approval_code):
     if approval_code == 0:
@@ -10,7 +21,9 @@ def approval_text(approval_code):
     if approval_code == 2:
         return 'denied'
 
-def gen_csv(recordset, csv_path):
+def gen_csv(recordset, csvpath):
+	mkdir_if_not_exists(split(csvpath)[0])
+
 	conn = db.db_conn()
 	c = conn.cursor()
 	sql = """ 
@@ -55,7 +68,19 @@ def gen_csv(recordset, csv_path):
 	        'request_user_email': r['email'],
 	        'request_approval': approval_text(r['status'])
 	    }
+	    print r['media_id']
 	    request_report = request_report.append(row, ignore_index=True)
 
-	request_report.to_csv(csv_path, index=False, index_label=False)
+	request_report.to_csv(csvpath, index=False, index_label=False)
 
+def gen_eml(recordset, r_name, publisher, p_name, xmlpath, csvpath):
+	title = 'Download request report for MorphoSource media for recordset ' + recordset
+	desc = 'Report of all download requests for MorphoSource media associated with recordset ' + recordset + '.'
+	link = convert_filepath_to_urlpath(csvpath)
+	ac = False
+	create_eml.gen_eml_file(title, desc, link, ac, recordset, r_name, publisher, p_name, xmlpath)
+
+def gen_files(recordset, r_name, publisher, p_name, dirpath):
+	csvpath = join(dirpath, 'datasets', 'dl_request.csv')
+	gen_csv(recordset, csvpath)
+	gen_eml(recordset, r_name, publisher, p_name, join(dirpath, 'eml', 'dl_request.xml'), csvpath)

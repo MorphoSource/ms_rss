@@ -1,8 +1,21 @@
+from os import makedirs
+from os.path import join, split, isdir
+
+import create_eml
 import db
 import ms_media_file
 import pandas
 
-def gen_csv(recordset, csv_path):
+def mkdir_if_not_exists(directory):
+	if not isdir(directory):
+		makedirs(directory)
+
+def convert_filepath_to_urlpath(filepath):
+	return 'https://www.morphosource.org/rss' + filepath.split('tmp')[1]
+
+def gen_csv(recordset, csvpath):
+	mkdir_if_not_exists(split(csvpath)[0])
+
 	conn = db.db_conn()
 	c = conn.cursor()
 
@@ -18,38 +31,45 @@ def gen_csv(recordset, csv_path):
 
 	ac = pandas.DataFrame(columns=
 		['dcterms:identifier', 
-		'ac:associatedSpecimenReference',
-		'ac:providerManagedID',
-		'ac:derivedFrom',
-		'ac:providerLiteral',
-		'ac:provider',
+		'associatedSpecimenReference',
+		'providerManagedID',
+		'derivedFrom',
+		'providerLiteral',
+		'provider',
 		'dc:type',
 		'dcterms:type',
-		'ac:subtypeLiteral',
-		'ac:subtype',
-		'ac:accessURI',
+		'subtypeLiteral',
+		'subtype',
+		'accessURI',
 		'dc:format',
-		'ac:subjectPart',
-		'ac:subjectOrientation',
-		'ac:caption',
-		'Iptc4xmpExt:LocationCreated',
-		'ac:captureDevice',
+		'subjectPart',
+		'subjectOrientation',
+		'caption',
+		'LocationCreated',
+		'captureDevice',
 		'dc:creator',
 		'ms:scanningTechnician',
-		'ac:fundingAttribution',
+		'fundingAttribution',
 		'exif:Xresolution',
 		'exif:Yresolution',
 		'dicom:SpacingBetweenSlices',
 		'dc:rights',
 		'dcterms:rights',
-		'xmpRights:Owner',
-		'xmpRights:UsageTerms',
-		'xmpRights:WebStatement',
-		'ac:licenseLogoURL',
-		'photoshop:Credit',
-		'coreid'])
+		'Owner',
+		'UsageTerms',
+		'WebStatement',
+		'licenseLogoURL',
+		'Credit',
+		'coreid',
+		'exif:PixelXDimension',
+		'exif:PixelYDimension',
+		'exif:ResolutionUnit',
+		'IDofContainingCollection'])
+
+	print len(r)
 
 	for mf_dict in r:
+		print mf_dict['media_id']
 		mf = ms_media_file.MsMediaFile(mf_dict)
 
 		if mf.is_published():
@@ -58,5 +78,19 @@ def gen_csv(recordset, csv_path):
 			if len(mf.ac_mfp_dict.keys()) > 0:
 				ac = ac.append(mf.ac_mfp_dict, ignore_index=True)
 
-	ac.to_csv(csv_path, index=False, index_label=False, encoding='utf-8')
+	ac.to_csv(csvpath, index=False, index_label=False, encoding='utf-8')
 
+def gen_eml(recordset, r_name, publisher, p_name, xmlpath, csvpath):
+	if not r_name:
+		r_name = 'unnamed'
+	r_str = r_name + ' recordset (iDigBio UUID ' + recordset + ')'
+	title = 'MorphoSource media, Audubon Core format for ' + r_str
+	desc = 'List of all MorphoSource media associated with ' + r_str + ' formatted using Darwin Core/Audubon Core metadata standard.'
+	link = convert_filepath_to_urlpath(csvpath)
+	ac = True
+	create_eml.gen_eml_file(title, desc, link, ac, recordset, r_name, publisher, p_name, xmlpath)
+
+def gen_files(recordset, r_name, publisher, p_name, dirpath):
+	csvpath = join(dirpath, 'datasets', 'ms.csv')
+	gen_csv(recordset, csvpath)
+	gen_eml(recordset, r_name, publisher, p_name, join(dirpath, 'eml', 'ms.xml'), csvpath)
